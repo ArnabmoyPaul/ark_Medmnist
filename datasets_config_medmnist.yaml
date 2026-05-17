@@ -1,0 +1,184 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MedMNIST datasets config for Ark+ cyclic pretraining across all 18 datasets
+# (12 × 2D  +  6 × 3D)
+#
+# Fields
+# ──────
+#   flag          : medmnist Python flag (passed to INFO[flag])
+#   n_channels    : 1 (grayscale) or 3 (RGB)
+#   dim           : 2 or 3
+#   task_type     : mirrors original Ark+ convention
+#                   "multi-class classification"
+#                   "multi-label classification"
+#                   "binary classification"
+#   diseases      : list of class names (defines num_classes for the omni-head)
+#   img_size      : default resolution used during training
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════
+#  2-D datasets  (12 total)
+# ══════════════════════════════════════════════════════
+
+PathMNIST:
+  flag: pathmnist
+  n_channels: 3
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['adipose','background','debris','lymphocytes','mucus',
+             'smooth_muscle','normal_colon_mucosa','cancer-associated_stroma',
+             'colorectal_adenocarcinoma_epithelium']
+
+ChestMNIST:
+  flag: chestmnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-label classification
+  diseases: ['atelectasis','cardiomegaly','effusion','infiltration','mass',
+             'nodule','pneumonia','pneumothorax','consolidation','edema',
+             'emphysema','fibrosis','pleural_thickening','hernia']
+
+DermaMNIST:
+  flag: dermamnist
+  n_channels: 3
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['actinic_keratoses','basal_cell_carcinoma','benign_keratosis',
+             'dermatofibroma','melanoma','melanocytic_nevi','vascular_lesions']
+
+OCTMNIST:
+  flag: octmnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['choroidal_neovascularization','diabetic_macular_edema',
+             'drusen','normal']
+
+PneumoniaMNIST:
+  flag: pneumoniamnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: binary classification
+  diseases: ['normal','pneumonia']
+
+RetinaMNIST:
+  flag: retinamnist
+  n_channels: 3
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['grade_0','grade_1','grade_2','grade_3','grade_4']
+
+BreastMNIST:
+  flag: breastmnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: binary classification
+  diseases: ['malignant','normal_benign']
+
+BloodMNIST:
+  flag: bloodmnist
+  n_channels: 3
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['basophil','eosinophil','erythroblast','immature_granulocytes',
+             'lymphocyte','monocyte','neutrophil','platelet']
+
+TissueMNIST:
+  flag: tissuemnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['collecting_duct_cortex','collecting_duct_medulla','distal_convoluted_tubule',
+             'glomerulus','interstitium','proximal_convoluted_tubule',
+             'proximal_tubule_segment1','thick_ascending_limb']
+
+OrganAMNIST:
+  flag: organamnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['bladder','femur-left','femur-right','heart','kidney-left',
+             'kidney-right','liver','lung-left','lung-right','pancreas',
+             'spleen']
+
+OrganCMNIST:
+  flag: organcmnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['bladder','femur-left','femur-right','heart','kidney-left',
+             'kidney-right','liver','lung-left','lung-right','pancreas',
+             'spleen']
+
+OrganSMNIST:
+  flag: organsmnist
+  n_channels: 1
+  dim: 2
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['bladder','femur-left','femur-right','heart','kidney-left',
+             'kidney-right','liver','lung-left','lung-right','pancreas',
+             'spleen']
+
+# ══════════════════════════════════════════════════════
+#  3-D datasets  (6 total)
+# ══════════════════════════════════════════════════════
+
+OrganMNIST3D:
+  flag: organmnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28        # spatial size of each slice (depth varies per sample)
+  task_type: multi-class classification
+  diseases: ['liver','kidney-right','kidney-left','femur-right','femur-left',
+             'bladder','heart','lung-right','lung-left','spleen','pancreas']
+
+NoduleMNIST3D:
+  flag: nodulemnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28
+  task_type: binary classification
+  diseases: ['benign','malignant']
+
+AdrenalMNIST3D:
+  flag: adrenalmnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28
+  task_type: binary classification
+  diseases: ['left_normal_adrenal','right_normal_adrenal']
+
+FractureMNIST3D:
+  flag: fracturemnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28
+  task_type: multi-class classification
+  diseases: ['no_fracture','unilateral_fracture','bilateral_fracture']
+
+VesselMNIST3D:
+  flag: vesselmnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28
+  task_type: binary classification
+  diseases: ['no_intracranial_aneurysm','intracranial_aneurysm']
+
+SynapseMNIST3D:
+  flag: synapsemnist3d
+  n_channels: 1
+  dim: 3
+  img_size: 28
+  task_type: binary classification
+  diseases: ['inhibitory_synapse','excitatory_synapse']
