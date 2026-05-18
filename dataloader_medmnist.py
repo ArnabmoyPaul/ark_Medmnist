@@ -118,16 +118,24 @@ class MedMNIST2DDataset(Dataset):
 
     def _make_label(self, label_raw):
         """
-        medmnist labels are shape (1,) for multi-class/binary,
-        or (N,) for multi-label. Return FloatTensor.
-        Handles both numpy arrays and plain Python ints/lists.
+        Three task types need three different label formats:
+
+          multi-class              → CrossEntropyLoss  → long scalar  (B,)
+          binary-class             → BCEWithLogitsLoss → float one-hot (B, n_classes)
+          multi-label, binary-class→ BCEWithLogitsLoss → float vector  (B, n_classes)
         """
         label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
-            # BCEWithLogitsLoss: float vector (B, C)
-            return torch.FloatTensor(label.astype(np.float32))
+            # multi-label: each class is independent 0/1
+            return torch.FloatTensor(label.reshape(self.n_classes).astype(np.float32))
+        elif self.task == 'binary-class':
+            # binary: model outputs (B, 2), so we need float one-hot (B, 2)
+            lv = int(label) if label.ndim == 0 else int(label[0])
+            oh = np.zeros(self.n_classes, dtype=np.float32)
+            oh[lv] = 1.0
+            return torch.FloatTensor(oh)
         else:
-            # CrossEntropyLoss: single integer class index (B,)
+            # multi-class: CrossEntropyLoss needs a single integer index
             lv = int(label) if label.ndim == 0 else int(label[0])
             return torch.tensor(lv, dtype=torch.long)
 
@@ -217,12 +225,16 @@ class MedMNIST3DDataset(Dataset):
 
     # ------------------------------------------------------------------
     def _make_label(self, label_raw):
+        """Same 3-way logic as 2D dataset."""
         label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
-            # BCEWithLogitsLoss: float vector (B, C)
-            return torch.FloatTensor(label.astype(np.float32))
+            return torch.FloatTensor(label.reshape(self.n_classes).astype(np.float32))
+        elif self.task == 'binary-class':
+            lv = int(label) if label.ndim == 0 else int(label[0])
+            oh = np.zeros(self.n_classes, dtype=np.float32)
+            oh[lv] = 1.0
+            return torch.FloatTensor(oh)
         else:
-            # CrossEntropyLoss: single integer class index (B,)
             lv = int(label) if label.ndim == 0 else int(label[0])
             return torch.tensor(lv, dtype=torch.long)
 

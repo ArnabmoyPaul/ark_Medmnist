@@ -37,15 +37,26 @@ sys.setrecursionlimit(40000)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _criterion_for(task_type):
-    """Return the appropriate loss for a dataset's task type."""
+    """
+    Return the appropriate loss for a dataset's task type.
+
+    multi-class classification  → CrossEntropyLoss   (targets: long index)
+    binary classification       → BCEWithLogitsLoss  (targets: float one-hot)
+    multi-label classification  → BCEWithLogitsLoss  (targets: float vector)
+    """
     if task_type == 'multi-class classification':
         return torch.nn.CrossEntropyLoss()
-    else:   # binary classification | multi-label classification
+    else:
         return torch.nn.BCEWithLogitsLoss()
 
 
 def _is_multiclass(task_type):
     return task_type == 'multi-class classification'
+
+
+def _is_bce_task(task_type):
+    """True for both binary and multi-label — both use BCEWithLogitsLoss."""
+    return task_type in ('binary classification', 'multi-label classification')
 
 
 # ─────────────────────────────────────────────────────────────────────────────
