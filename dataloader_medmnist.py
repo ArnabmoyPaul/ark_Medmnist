@@ -99,11 +99,20 @@ class MedMNIST2DDataset(Dataset):
         self.val_tf     = _make_2d_val_transform(size)
 
     # ------------------------------------------------------------------
-    def _to_rgb(self, img_np):
-        """Convert numpy H×W or H×W×C array to PIL RGB."""
+    def _to_rgb(self, img):
+        """
+        Accept either a PIL Image or a numpy H×W / H×W×C uint8 array.
+        Always returns a PIL RGB Image.
+        """
+        # ── newer medmnist (≥3.0) returns PIL Image directly ──────────────
+        if isinstance(img, Image.Image):
+            return img.convert('RGB')
+
+        # ── older medmnist returns numpy array ────────────────────────────
+        img_np = np.array(img)
         if img_np.ndim == 2:
             img_np = np.stack([img_np] * 3, axis=-1)
-        elif img_np.shape[-1] == 1:
+        elif img_np.ndim == 3 and img_np.shape[-1] == 1:
             img_np = np.concatenate([img_np] * 3, axis=-1)
         return Image.fromarray(img_np.astype(np.uint8))
 
@@ -111,13 +120,14 @@ class MedMNIST2DDataset(Dataset):
         """
         medmnist labels are shape (1,) for multi-class/binary,
         or (N,) for multi-label. Return FloatTensor.
+        Handles both numpy arrays and plain Python ints/lists.
         """
-        label = label_raw.squeeze()           # scalar or 1-D array
+        label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
             return torch.FloatTensor(label.astype(np.float32))
         else:
-            # multi-class / binary-class: one-hot
-            n = self.n_classes
+            # multi-class / binary-class: one-hot encode
+            n  = self.n_classes
             lv = int(label) if label.ndim == 0 else int(label[0])
             oh = np.zeros(n, dtype=np.float32)
             oh[lv] = 1.0
@@ -127,8 +137,8 @@ class MedMNIST2DDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        img_np, label_raw = self.dataset[idx]      # numpy arrays
-        pil = self._to_rgb(img_np)
+        img, label_raw = self.dataset[idx]    # PIL Image or numpy (medmnist v2/v3)
+        pil   = self._to_rgb(img)
         label = self._make_label(label_raw)
 
         if self.mode == 'train':
@@ -209,7 +219,7 @@ class MedMNIST3DDataset(Dataset):
 
     # ------------------------------------------------------------------
     def _make_label(self, label_raw):
-        label = label_raw.squeeze()
+        label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
             return torch.FloatTensor(label.astype(np.float32))
         else:
@@ -223,8 +233,11 @@ class MedMNIST3DDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        # medmnist 3D: img shape (D, H, W) or (D, H, W, C); uint8
-        img_np, label_raw = self.dataset[idx]
+        # medmnist 3D returns numpy (D, H, W) or (D, H, W, C); uint8
+        img_raw, label_raw = self.dataset[idx]
+
+        # Convert to numpy defensively (v2 gives numpy, v3 may differ)
+        img_np = np.array(img_raw)
 
         # Normalise to [0,1]
         volume = img_np.astype(np.float32) / 255.0

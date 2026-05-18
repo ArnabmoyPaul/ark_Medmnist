@@ -82,19 +82,24 @@ def omni_engine_medmnist(args,
     output_file = os.path.join(output_path,    f'{exp}_{args.exp_name}_results.txt')
 
     # ── DataLoaders ──────────────────────────────────────────────────────────
+    # Cap workers: Colab/low-CPU machines warn (and slow down) above 2
+    import multiprocessing
+    max_workers = min(args.workers, multiprocessing.cpu_count(), 2)
+    print(f"Using {max_workers} DataLoader workers.")
+
     loaders_train = [
         DataLoader(d, batch_size=args.batch_size, shuffle=True,
-                   num_workers=args.workers, pin_memory=True)
+                   num_workers=max_workers, pin_memory=True)
         for d in dataset_train_list
     ]
     loaders_val = [
         DataLoader(d, batch_size=args.batch_size, shuffle=False,
-                   num_workers=args.workers, pin_memory=True)
+                   num_workers=max_workers, pin_memory=True)
         for d in dataset_val_list
     ]
     loaders_test = [
         DataLoader(d, batch_size=max(1, args.batch_size // 2), shuffle=False,
-                   num_workers=args.workers, pin_memory=True)
+                   num_workers=max_workers, pin_memory=True)
         for d in dataset_test_list
     ]
 
