@@ -255,12 +255,13 @@ def omni_engine_medmnist(args,
                         teacher, i, loaders_test[i], device, multiclass)
 
                     if multiclass:
-                        acc_s = accuracy_score(
-                            np.argmax(y_s.cpu().numpy(), axis=1),
-                            np.argmax(p_s.cpu().numpy(), axis=1))
-                        acc_t = accuracy_score(
-                            np.argmax(y_t.cpu().numpy(), axis=1),
-                            np.argmax(p_t.cpu().numpy(), axis=1))
+                        # y_s is float cast of long index → shape (B,) or (B,1)
+                        y_s_idx = y_s.cpu().numpy().flatten().astype(int)
+                        y_t_idx = y_t.cpu().numpy().flatten().astype(int)
+                        p_s_idx = np.argmax(p_s.cpu().numpy(), axis=1)
+                        p_t_idx = np.argmax(p_t.cpu().numpy(), axis=1)
+                        acc_s = accuracy_score(y_s_idx, p_s_idx)
+                        acc_t = accuracy_score(y_t_idx, p_t_idx)
                         print(f">> {ds_name}: Student ACC={acc_s:.4f}, "
                               f"Teacher ACC={acc_t:.4f}")
                         writer.write(

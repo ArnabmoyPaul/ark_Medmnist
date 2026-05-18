@@ -124,14 +124,12 @@ class MedMNIST2DDataset(Dataset):
         """
         label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
+            # BCEWithLogitsLoss: float vector (B, C)
             return torch.FloatTensor(label.astype(np.float32))
         else:
-            # multi-class / binary-class: one-hot encode
-            n  = self.n_classes
+            # CrossEntropyLoss: single integer class index (B,)
             lv = int(label) if label.ndim == 0 else int(label[0])
-            oh = np.zeros(n, dtype=np.float32)
-            oh[lv] = 1.0
-            return torch.FloatTensor(oh)
+            return torch.tensor(lv, dtype=torch.long)
 
     def __len__(self):
         return len(self.dataset)
@@ -221,13 +219,12 @@ class MedMNIST3DDataset(Dataset):
     def _make_label(self, label_raw):
         label = np.array(label_raw).squeeze()
         if self.task == 'multi-label, binary-class':
+            # BCEWithLogitsLoss: float vector (B, C)
             return torch.FloatTensor(label.astype(np.float32))
         else:
-            n  = self.n_classes
+            # CrossEntropyLoss: single integer class index (B,)
             lv = int(label) if label.ndim == 0 else int(label[0])
-            oh = np.zeros(n, dtype=np.float32)
-            oh[lv] = 1.0
-            return torch.FloatTensor(oh)
+            return torch.tensor(lv, dtype=torch.long)
 
     def __len__(self):
         return len(self.dataset)

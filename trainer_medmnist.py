@@ -80,7 +80,8 @@ def train_one_epoch(model, use_head_n, dataset_name,
     for i, (samples1, samples2, targets) in enumerate(data_loader_train):
         samples1 = samples1.float().to(device)
         samples2 = samples2.float().to(device)
-        targets  = targets.float().to(device)
+        # targets: long index for multi-class, float for multi-label/binary
+        targets  = targets.to(device)
 
         feat_t, pred_t = teacher(samples2, use_head_n)
         feat_s, pred_s = model(samples1,   use_head_n)
@@ -146,7 +147,7 @@ def evaluate(model, use_head_n, data_loader_val, device, criterion, dataset_name
     with torch.no_grad():
         for i, (samples, _, targets) in enumerate(data_loader_val):
             samples = samples.float().to(device)
-            targets = targets.float().to(device)
+            targets = targets.to(device)  # long for multi-class, float for others
 
             _, outputs = model(samples, use_head_n)
             loss = criterion(outputs, targets)
@@ -181,7 +182,8 @@ def test_classification(model, use_head_n, data_loader_test,
     with torch.no_grad():
         for i, (samples, _, targets) in enumerate(tqdm(data_loader_test)):
             targets = targets.to(device)
-            y_test  = torch.cat((y_test, targets), 0)
+            # y_test must be float for metric_AUROC; long labels need casting
+            y_test  = torch.cat((y_test, targets.float()), 0)
 
             ndim = samples.dim()
 
