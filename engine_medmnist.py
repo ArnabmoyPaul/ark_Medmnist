@@ -85,12 +85,19 @@ def omni_engine_medmnist(args,
     exp = 'Ark_Plus_MedMNIST'
     for ds in dataset_list:
         exp += '_' + ds
-    run_model_path  = os.path.join(model_path, exp, args.exp_name)
+
+    # Shorten exp name for filesystem use (Linux: 255 char filename limit)
+    # Use dataset count + hash instead of concatenating all names
+    import hashlib
+    ds_hash    = hashlib.md5('_'.join(dataset_list).encode()).hexdigest()[:8]
+    exp_short  = f'Ark_Plus_MedMNIST_{len(dataset_list)}ds_{ds_hash}'
+
+    run_model_path  = os.path.join(model_path, exp_short, args.exp_name)
     os.makedirs(run_model_path, exist_ok=True)
     os.makedirs(output_path,    exist_ok=True)
 
     log_file    = os.path.join(run_model_path, 'train.log')
-    output_file = os.path.join(output_path,    f'{exp}_{args.exp_name}_results.txt')
+    output_file = os.path.join(output_path,    f'{exp_short}_{args.exp_name}_results.txt')
 
     # ── DataLoaders ──────────────────────────────────────────────────────────
     # Cap workers: Colab/low-CPU machines warn (and slow down) above 2
@@ -155,7 +162,7 @@ def omni_engine_medmnist(args,
     # ── Resume ───────────────────────────────────────────────────────────────
     start_epoch = 0
     best_val    = float('inf')
-    save_stem   = os.path.join(run_model_path, exp)
+    save_stem   = os.path.join(run_model_path, exp_short)
 
     if args.mode == 'train' and args.resume:
         ckpt_path = save_stem + '.pth.tar'
@@ -245,7 +252,7 @@ def omni_engine_medmnist(args,
         # ── Periodic test evaluation ──────────────────────────────────────
         if epoch % args.test_epoch == 0 or epoch + 1 == args.pretrain_epochs:
             save_checkpoint(ckpt_state,
-                            filename=save_stem + str(epoch))
+                            filename=save_stem + f'_ep{epoch}')
 
             t_res, t_res_teacher = [], []
 
