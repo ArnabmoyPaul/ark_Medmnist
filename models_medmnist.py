@@ -86,17 +86,33 @@ class ArkSwinTransformer(swin.SwinTransformer):
             feats = feats.mean(dim=[1, 2])
         return feats                  # (B, F)
 
+    @staticmethod
+    def _to3ch(x):
+        """
+        Replicate single-channel input to 3 channels so the Swin
+        patch embedding (built with in_chans=3) always gets RGB-like input.
+        - (B, 1, H, W)    → (B, 3, H, W)
+        - (B, 3, H, W)    → unchanged
+        - (B*D, 1, H, W)  → (B*D, 3, H, W)  [3D slices after fold]
+        """
+        if x.shape[1] == 1:
+            x = x.repeat(1, 3, 1, 1)
+        return x
+
     def _extract_features(self, x):
         """
-        x : (B, C, H, W) or (B, C, D, H, W)
+        x : (B, C, H, W)      — 2D input  (C = 1 or 3)
+            (B, C, D, H, W)   — 3D input  (C = 1, slices are grayscale)
         Returns (B, F) feature vector.
         """
         if x.dim() == 5:
             B, C, D, H, W = x.shape
-            x = rearrange(x, 'b c d h w -> (b d) c h w')
+            x = rearrange(x, 'b c d h w -> (b d) c h w')  # (B*D, C, H, W)
+            x = self._to3ch(x)                             # (B*D, 3, H, W)
             feats = self._pool(super().forward_features(x))  # (B*D, F)
             feats = feats.view(B, D, -1).mean(dim=1)         # (B, F)
         else:
+            x = self._to3ch(x)                             # (B, 3, H, W)
             feats = self._pool(super().forward_features(x))  # (B, F)
         return feats
 
