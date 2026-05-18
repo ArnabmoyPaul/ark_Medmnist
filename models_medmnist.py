@@ -72,6 +72,20 @@ class ArkSwinTransformer(swin.SwinTransformer):
         ])
 
     # ------------------------------------------------------------------
+    @staticmethod
+    def _pool(feats):
+        """
+        Ensure feats is (B, F).
+        timm SwinTransformer.forward_features() returns:
+          - (B, F)       in newer timm (already pooled via AdaptiveAvgPool)
+          - (B, H*W, C)  in older timm (needs manual pooling)
+        """
+        if feats.dim() == 3:          # (B, seq_len, C) → mean over seq
+            feats = feats.mean(dim=1)
+        elif feats.dim() == 4:        # (B, H, W, C) → mean over spatial
+            feats = feats.mean(dim=[1, 2])
+        return feats                  # (B, F)
+
     def _extract_features(self, x):
         """
         x : (B, C, H, W) or (B, C, D, H, W)
@@ -80,10 +94,10 @@ class ArkSwinTransformer(swin.SwinTransformer):
         if x.dim() == 5:
             B, C, D, H, W = x.shape
             x = rearrange(x, 'b c d h w -> (b d) c h w')
-            feats = super().forward_features(x)          # (B*D, F)
-            feats = feats.view(B, D, -1).mean(dim=1)     # (B, F)
+            feats = self._pool(super().forward_features(x))  # (B*D, F)
+            feats = feats.view(B, D, -1).mean(dim=1)         # (B, F)
         else:
-            feats = super().forward_features(x)          # (B, F)
+            feats = self._pool(super().forward_features(x))  # (B, F)
         return feats
 
     def forward(self, x, head_n=None):
