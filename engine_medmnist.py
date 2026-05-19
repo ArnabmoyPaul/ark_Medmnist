@@ -22,6 +22,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
+from dataloader_medmnist import get_weighted_sampler, MEDMNIST_3D_FLAGS
 from sklearn.metrics import accuracy_score
 
 from models_medmnist import build_omni_model_medmnist, save_checkpoint
@@ -105,11 +106,25 @@ def omni_engine_medmnist(args,
     max_workers = min(args.workers, multiprocessing.cpu_count(), 2)
     print(f"Using {max_workers} DataLoader workers.")
 
-    loaders_train = [
-        DataLoader(d, batch_size=args.batch_size, shuffle=True,
-                   num_workers=max_workers, pin_memory=True)
-        for d in dataset_train_list
-    ]
+    # For 3D datasets: replace shuffle=True with a WeightedRandomSampler
+    # that balances classes each epoch. This fixes:
+    #   - FractureMNIST3D class collapse (always predicts majority class)
+    #   - Binary 3D datasets stuck near random chance
+    # For 2D datasets: keep shuffle=True (enough samples, no collapse issue)
+    loaders_train = []
+    for ds_name, d in zip(dataset_list, dataset_train_list):
+        is_3d = ds_name.endswith('3D')
+        if is_3d:
+            print(f"  [WeightedSampler] Building class-balanced sampler for {ds_name} ...")
+            sampler = get_weighted_sampler(d)
+            # sampler and shuffle are mutually exclusive in DataLoader
+            loader = DataLoader(d, batch_size=args.batch_size, sampler=sampler,
+                                shuffle=False, num_workers=max_workers,
+                                pin_memory=True)
+        else:
+            loader = DataLoader(d, batch_size=args.batch_size, shuffle=True,
+                                num_workers=max_workers, pin_memory=True)
+        loaders_train.append(loader)
     loaders_val = [
         DataLoader(d, batch_size=args.batch_size, shuffle=False,
                    num_workers=max_workers, pin_memory=True)

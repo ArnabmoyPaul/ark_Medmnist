@@ -297,6 +297,49 @@ MEDMNIST_3D_FLAGS = [
 ]
 
 
+def get_weighted_sampler(dataset):
+    """
+    Build a WeightedRandomSampler that balances classes in each epoch.
+
+    Works for all three MedMNIST label formats:
+      - multi-class   → label is a long scalar  → class index direct
+      - binary-class  → label is float one-hot   → argmax to get class
+      - multi-label   → label is float vector    → treated as multi-class
+                        using argmax (imperfect but prevents collapse)
+
+    Returns a WeightedRandomSampler with replacement=True and
+    num_samples = len(dataset), so each epoch sees the same number
+    of batches as before — just rebalanced.
+    """
+    from torch.utils.data import WeightedRandomSampler
+
+    labels = []
+    for i in range(len(dataset)):
+        _, _, lbl = dataset[i]
+        if isinstance(lbl, torch.Tensor):
+            if lbl.dtype == torch.long:
+                labels.append(lbl.item())                 # multi-class
+            else:
+                labels.append(int(lbl.argmax().item()))   # binary / multi-label
+        else:
+            labels.append(int(lbl))
+
+    labels = np.array(labels)
+    classes, counts = np.unique(labels, return_counts=True)
+    # Weight per class = 1 / frequency (rarer class → higher weight)
+    class_weight = 1.0 / counts.astype(np.float64)
+    # Map each sample to its class weight
+    sample_weights = torch.tensor(
+        [class_weight[np.searchsorted(classes, l)] for l in labels],
+        dtype=torch.float64
+    )
+    return WeightedRandomSampler(
+        weights=sample_weights,
+        num_samples=len(dataset),
+        replacement=True
+    )
+
+
 def build_medmnist_datasets(flag, split, size=28, download=True, root=None):
     """
     Factory that returns (train_ds, val_ds, test_ds) for a given MedMNIST flag.
